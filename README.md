@@ -1,0 +1,53 @@
+# MERN Expense Tracker
+
+A simple expense tracking application built with React, Express, MongoDB Atlas, and Mongoose.
+
+## Features
+
+* Add expenses
+* Edit expenses
+* Delete expenses
+* Group expenses by category
+* Display category totals
+* Display monthly spending total
+* Frontend and backend validation
+* Error handling
+
+## Tech Stack
+
+Frontend:
+
+* React
+* Vite
+* Axios
+
+Backend:
+
+* Express
+* MongoDB Atlas
+* Mongoose
+
+## Run Locally
+
+Backend:
+
+```bash
+cd server
+npm install
+npm run dev
+```
+
+Frontend:
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Create a `.env` file in the `server` folder:
+
+```env
+MONGO_URI=your_mongodb_connection_string
+PORT=5000
+```
