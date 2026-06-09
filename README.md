@@ -51,3 +51,8 @@ Create a `.env` file in the `server` folder:
 MONGO_URI=your_mongodb_connection_string
 PORT=5000
 ```
+Create a `.env` file in the `client` folder:
+
+```env
+VITE_API_URL=http://localhost:5000
+```
