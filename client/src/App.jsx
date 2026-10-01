@@ -1,13 +1,7 @@
 import "./App.css";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ExpenseForm from "./components/ExpenseForm";
 import CategorySection from "./components/CategorySection";
-import {
-  getExpenses,
-  createExpense,
-  updateExpense,
-  deleteExpense,
-} from "./services/expenseService";
 import {
   getCurrentMonthExpenses,
   getTotalAmount,
@@ -16,44 +10,36 @@ import {
   normalizeExpenseTitle,
 } from "./utils/expenseUtils";
 
+import useExpenses from "./hooks/useExpenses";
+
 function App() {
-  const [expenses, setExpenses] = useState([]);
+  const {
+    expenses,
+    errorMessage: apiErrorMessage,
+    successMessage,
+    addExpense,
+    editExpense,
+    removeExpense,
+  } = useExpenses();
 
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [editingExpenseId, setEditingExpenseId] = useState(null);
 
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const response = await getExpenses();
-        setExpenses(response.data);
-      } catch (error) {
-        console.error(error);
-        setErrorMessage("Failed to load expenses");
-      }
-    };
-
-    fetchExpenses();
-  }, []);
+  const [validationError, setValidationError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setErrorMessage("");
-    setSuccessMessage("");
-
+    setValidationError("");
     if (!title.trim() || !amount || !category.trim()) {
-      setErrorMessage("Please fill in all fields");
+      setValidationError("Please fill in all fields");
       return;
     }
 
     if (Number(amount) <= 0) {
-      setErrorMessage("Amount must be greater than 0");
+      setValidationError("Amount must be greater than 0");
       return;
     }
 
@@ -63,47 +49,22 @@ function App() {
       category: normalizeCategory(category),
     };
 
-    try {
-      if (editingExpenseId) {
-        const response = await updateExpense(editingExpenseId, newExpense);
+    let success;
 
-        setExpenses(
-          expenses.map((expense) =>
-            expense._id === editingExpenseId ? response.data : expense,
-          ),
-        );
+    if (editingExpenseId) {
+      success = await editExpense(editingExpenseId, newExpense);
 
+      if (success) {
         setEditingExpenseId(null);
-        setSuccessMessage("Expense updated successfully");
-      } else {
-        const response = await createExpense(newExpense);
-
-        setExpenses([...expenses, response.data]);
-        setSuccessMessage("Expense added successfully");
       }
+    } else {
+      success = await addExpense(newExpense);
+    }
 
+    if (success) {
       setTitle("");
       setAmount("");
       setCategory("");
-    } catch (error) {
-      console.error(error);
-      setErrorMessage("Failed to save expense");
-    }
-  };
-
-  const handleDelete = async (id) => {
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    try {
-      await deleteExpense(id);
-
-      setExpenses(expenses.filter((expense) => expense._id !== id));
-
-      setSuccessMessage("Expense deleted successfully");
-    } catch (error) {
-      console.error(error);
-      setErrorMessage("Failed to delete expense");
     }
   };
 
@@ -123,7 +84,8 @@ function App() {
   return (
     <div className="container">
       <h1>Monthly Expense Tracker</h1>
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
+      {validationError && <p className="error-message">{validationError}</p>}
+      {apiErrorMessage && <p className="error-message">{apiErrorMessage}</p>}
       {successMessage && <p className="success-message">{successMessage}</p>}
       <ExpenseForm
         title={title}
@@ -144,7 +106,7 @@ function App() {
             category={category}
             expenses={groupedExpenses[category]}
             handleEdit={handleEdit}
-            handleDelete={handleDelete}
+            handleDelete={removeExpense}
           />
         ))}
     </div>
