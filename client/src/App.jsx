@@ -6,8 +6,6 @@ import {
   getCurrentMonthExpenses,
   getTotalAmount,
   groupExpensesByCategory,
-  normalizeCategory,
-  normalizeExpenseTitle,
 } from "./utils/expenseUtils";
 
 import useExpenses from "./hooks/useExpenses";
@@ -21,60 +19,27 @@ function App() {
     editExpense,
     removeExpense,
   } = useExpenses();
+  const [editingExpense, setEditingExpense] = useState(null);
 
-  const [title, setTitle] = useState("");
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [editingExpenseId, setEditingExpenseId] = useState(null);
-
-  const [validationError, setValidationError] = useState("");
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    setValidationError("");
-    if (!title.trim() || !amount || !category.trim()) {
-      setValidationError("Please fill in all fields");
-      return;
-    }
-
-    if (Number(amount) <= 0) {
-      setValidationError("Amount must be greater than 0");
-      return;
-    }
-
-    const newExpense = {
-      title: normalizeExpenseTitle(title),
-      amount: Number(amount),
-      category: normalizeCategory(category),
-    };
-
+  const handleSubmit = async (expenseData) => {
     let success;
 
-    if (editingExpenseId) {
-      success = await editExpense(editingExpenseId, newExpense);
+    if (editingExpense) {
+      success = await editExpense(editingExpense._id, expenseData);
 
       if (success) {
-        setEditingExpenseId(null);
+        setEditingExpense(null);
       }
     } else {
-      success = await addExpense(newExpense);
+      success = await addExpense(expenseData);
     }
-
-    if (success) {
-      setTitle("");
-      setAmount("");
-      setCategory("");
-    }
+    return success;
   };
 
   const currentMonthExpenses = getCurrentMonthExpenses(expenses);
 
   const handleEdit = (expense) => {
-    setEditingExpenseId(expense._id);
-    setTitle(expense.title);
-    setAmount(expense.amount);
-    setCategory(expense.category);
+    setEditingExpense(expense);
   };
 
   const totalAmount = getTotalAmount(currentMonthExpenses);
@@ -84,17 +49,11 @@ function App() {
   return (
     <div className="container">
       <h1>Monthly Expense Tracker</h1>
-      {validationError && <p className="error-message">{validationError}</p>}
       {apiErrorMessage && <p className="error-message">{apiErrorMessage}</p>}
       {successMessage && <p className="success-message">{successMessage}</p>}
       <ExpenseForm
-        title={title}
-        setTitle={setTitle}
-        amount={amount}
-        setAmount={setAmount}
-        category={category}
-        setCategory={setCategory}
-        editingExpenseId={editingExpenseId}
+        key={editingExpense?._id ?? "new"}
+        editingExpense={editingExpense}
         handleSubmit={handleSubmit}
       />
       <h2>Total This Month: ₪{totalAmount}</h2>

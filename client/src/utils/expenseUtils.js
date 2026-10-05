@@ -31,12 +31,6 @@ export const groupExpensesByCategory = (expenses) => {
   }, {});
 };
 
-export const getCategoryTotal = (expenses) => {
-  return expenses.reduce((sum, expense) => {
-    return sum + expense.amount;
-  }, 0);
-};
-
 export const normalizeCategory = (category) => {
   return category
     .trim()
