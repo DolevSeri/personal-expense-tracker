@@ -1,33 +1,89 @@
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "test123"
+}
+###
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "test123"
+}
+###
+POST http://localhost:5000/api/expenses
+Content-Type: application/json
+
+{
+  "title": "Test Expense",
+  "amount": 25,
+  "category": "Food",
+  "date": "2026-10-06"
+}
+###
 GET http://localhost:5000/api/expenses
 ###
+PUT http://localhost:5000/api/expenses/6ac5229ce028e89179dbbde7
+Content-Type: application/json
+
+{
+  "title": "Updated Expense",
+  "amount": 50,
+  "category": "Food",
+  "date": "2026-10-06"
+}
+###
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User B",
+  "email": "testb@example.com",
+  "password": "test123"
+}
+###
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "testb@example.com",
+  "password": "test123"
+}
+###
+GET http://localhost:5000/api/expenses
+###
+PUT http://localhost:5000/api/expenses/6ac5229ce028e89179dbbde7
+Content-Type: application/json
+
+{
+  "title": "Hacked Expense",
+  "amount": 999,
+  "category": "Food",
+  "date": "2026-10-06"
+}
+###
+DELETE http://localhost:5000/api/expenses/6ac5229ce028e89179dbbde7
+###
 POST http://localhost:5000/api/expenses
 Content-Type: application/json
 
 {
-  "title": "Netflix",
-  "amount": 18,
-  "category": "Entertainment"
+  "title": "User B Expense",
+  "amount": 100,
+  "category": "Shopping",
+  "date": "2026-10-06"
 }
 ###
-DELETE http://localhost:5000/api/expenses/6a258d84198e88a641f372b7
-###
-
-PUT http://localhost:5000/api/expenses/6a25a4a5ac83fdc6e84889df
+POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
-  "title": "Netflix",
-  "amount": 22,
-  "category": "Entertainment"
+  "email": "test@example.com",
+  "password": "test123"
 }
-
 ###
-
-POST http://localhost:5000/api/expenses
-Content-Type: application/json
-
-{
-  "title": "Groceries",
-  "amount": 250,
-  "category": "Food"
-}
+GET http://localhost:5000/api/expenses

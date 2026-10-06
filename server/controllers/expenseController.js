@@ -2,7 +2,9 @@ const Expense = require("../models/Expense");
 
 const getExpenses = async (req, res, next) => {
   try {
-    const expenses = await Expense.find();
+    const expenses = await Expense.find({
+      user: req.userId,
+    });
 
     res.status(200).json(expenses);
   } catch (error) {
@@ -12,7 +14,14 @@ const getExpenses = async (req, res, next) => {
 
 const createExpense = async (req, res, next) => {
   try {
-    const expense = await Expense.create(req.body);
+    const { title, amount, category, date } = req.body;
+    const expense = await Expense.create({
+      title,
+      amount,
+      category,
+      date,
+      user: req.userId,
+    });
 
     res.status(201).json(expense);
   } catch (error) {
@@ -22,8 +31,10 @@ const createExpense = async (req, res, next) => {
 
 const deleteExpense = async (req, res, next) => {
   try {
-    const expense = await Expense.findByIdAndDelete(req.params.id);
-
+    const expense = await Expense.findOneAndDelete({
+      _id: req.params.id,
+      user: req.userId,
+    });
     if (!expense) {
       return res.status(404).json({
         message: "Expense not found",
@@ -40,10 +51,23 @@ const deleteExpense = async (req, res, next) => {
 
 const updateExpense = async (req, res, next) => {
   try {
-    const expense = await Expense.findByIdAndUpdate(req.params.id, req.body, {
-      returnDocument: "after",
-      runValidators: true,
-    });
+    const { title, amount, category, date } = req.body;
+    const expense = await Expense.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        user: req.userId,
+      },
+      {
+        title,
+        amount,
+        category,
+        date,
+      },
+      {
+        returnDocument: "after",
+        runValidators: true,
+      },
+    );
 
     if (!expense) {
       return res.status(404).json({
