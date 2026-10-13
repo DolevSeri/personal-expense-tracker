@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const isProduction = process.env.NODE_ENV === "production";
 
 const registerUser = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -61,9 +62,11 @@ const loginUser = async (req, res, next) => {
 
     res.cookie("token", token, {
       httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
-    
+
     res.status(200).json({
       _id: user._id,
       name: user.name,
@@ -74,7 +77,37 @@ const loginUser = async (req, res, next) => {
   }
 };
 
+const logoutUser = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
+
+  res.status(200).json({
+    message: "Logged out successfully",
+  });
+};
+
+const getMe = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  logoutUser,
+  getMe,
 };

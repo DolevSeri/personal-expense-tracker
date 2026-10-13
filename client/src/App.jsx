@@ -1,75 +1,35 @@
 import "./App.css";
-import { useState } from "react";
-import ExpenseForm from "./components/ExpenseForm";
-import CategorySection from "./components/CategorySection";
-import {
-  getCurrentMonthExpenses,
-  getTotalAmount,
-  groupExpensesByCategory,
-} from "./utils/expenseUtils";
-
-import useExpenses from "./hooks/useExpenses";
+import { useContext, useState } from "react";
+import AuthContext from "./context/AuthContext";
+import LoginForm from "./components/LoginForm";
+import RegisterForm from "./components/RegisterForm";
+import ExpenseTracker from "./components/ExpenseTracker";
 
 function App() {
-  const {
-    expenses,
-    errorMessage: apiErrorMessage,
-    successMessage,
-    addExpense,
-    editExpense,
-    removeExpense,
-  } = useExpenses();
-  const [editingExpense, setEditingExpense] = useState(null);
+  const { user, loading } = useContext(AuthContext);
+  const [showRegister, setShowRegister] = useState(false);
 
-  const handleSubmit = async (expenseData) => {
-    let success;
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
-    if (editingExpense) {
-      success = await editExpense(editingExpense._id, expenseData);
+  if (!user) {
+    return (
+      <>
+        {showRegister ? (
+          <RegisterForm onSuccess={() => setShowRegister(false)} />
+        ) : (
+          <LoginForm />
+        )}
 
-      if (success) {
-        setEditingExpense(null);
-      }
-    } else {
-      success = await addExpense(expenseData);
-    }
-    return success;
-  };
+        <button type="button" onClick={() => setShowRegister((prev) => !prev)}>
+          {showRegister ? "Back to Login" : "Create an Account"}
+        </button>
+      </>
+    );
+  }
 
-  const currentMonthExpenses = getCurrentMonthExpenses(expenses);
-
-  const handleEdit = (expense) => {
-    setEditingExpense(expense);
-  };
-
-  const totalAmount = getTotalAmount(currentMonthExpenses);
-
-  const groupedExpenses = groupExpensesByCategory(currentMonthExpenses);
-
-  return (
-    <div className="container">
-      <h1>Monthly Expense Tracker</h1>
-      {apiErrorMessage && <p className="error-message">{apiErrorMessage}</p>}
-      {successMessage && <p className="success-message">{successMessage}</p>}
-      <ExpenseForm
-        key={editingExpense?._id ?? "new"}
-        editingExpense={editingExpense}
-        handleSubmit={handleSubmit}
-      />
-      <h2>Total This Month: ₪{totalAmount}</h2>
-      {Object.keys(groupedExpenses)
-        .sort()
-        .map((category) => (
-          <CategorySection
-            key={category}
-            category={category}
-            expenses={groupedExpenses[category]}
-            handleEdit={handleEdit}
-            handleDelete={removeExpense}
-          />
-        ))}
-    </div>
-  );
+  return <ExpenseTracker />;
 }
 
 export default App;

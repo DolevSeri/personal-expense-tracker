@@ -4,6 +4,7 @@ const expenseRoutes = require("./routes/expenseRoutes");
 const authRoutes = require("./routes/authRoutes");
 const errorHandler = require("./middleware/errorMiddleware");
 const cookieParser = require("cookie-parser");
+const checkOrigin = require("./middleware/originMiddleware");
 require("dotenv").config();
 
 const connectDB = require("./config/db");
@@ -12,8 +13,14 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  }),
+);
 app.use(express.json());
+app.use(checkOrigin);
 app.use(cookieParser());
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/auth", authRoutes);
