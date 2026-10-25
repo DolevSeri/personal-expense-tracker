@@ -1,35 +1,26 @@
 import "./App.css";
-import { useContext, useState } from "react";
-import AuthContext from "./context/AuthContext";
+import { Routes, Route, Navigate } from "react-router";
+import ProtectedRoute from "./components/ProtectedRoute";
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
 import ExpenseTracker from "./components/ExpenseTracker";
+import PublicOnlyRoute from "./components/PublicOnlyRoute";
 
 function App() {
-  const { user, loading } = useContext(AuthContext);
-  const [showRegister, setShowRegister] = useState(false);
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route element={<PublicOnlyRoute />}>
+        <Route path="/login" element={<LoginForm />} />
+        <Route path="/register" element={<RegisterForm />} />
+      </Route>
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<ExpenseTracker />} />
+      </Route>
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
-  if (!user) {
-    return (
-      <>
-        {showRegister ? (
-          <RegisterForm onSuccess={() => setShowRegister(false)} />
-        ) : (
-          <LoginForm />
-        )}
-
-        <button type="button" onClick={() => setShowRegister((prev) => !prev)}>
-          {showRegister ? "Back to Login" : "Create an Account"}
-        </button>
-      </>
-    );
-  }
-
-  return <ExpenseTracker />;
+      <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+    </Routes>
+  );
 }
 
 export default App;

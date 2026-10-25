@@ -1,12 +1,14 @@
 import { useContext, useState } from "react";
 import AuthContext from "../context/AuthContext";
+import { useNavigate, Link } from "react-router";
 
-function RegisterForm({ onSuccess }) {
+function RegisterForm() {
   const { register } = useContext(AuthContext);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,39 +16,45 @@ function RegisterForm({ onSuccess }) {
 
     try {
       await register({ name, email, password });
-      onSuccess();
+
+      navigate("/login", { replace: true });
     } catch (error) {
       setErrorMessage(error.response?.data?.message || "Registration failed");
     }
   };
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-      />
+    <>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
 
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-      {errorMessage && (<p className="error-message">{errorMessage}</p>)}
-      <button type="submit">Register</button>
-    </form>
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        {errorMessage && <p className="error-message">{errorMessage}</p>}
+        <button type="submit">Register</button>
+      </form>
+      <p>
+        already have an account? <Link to="/login">Login</Link>
+      </p>
+    </>
   );
 }
 
