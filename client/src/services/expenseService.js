@@ -2,8 +2,8 @@ import api from "./api";
 
 const API_URL = "/api/expenses";
 
-export const getExpenses = () => {
-  return api.get(API_URL);
+export const getExpenses = (config = {}) => {
+  return api.get(API_URL, config);
 };
 
 export const createExpense = (expenseData) => {

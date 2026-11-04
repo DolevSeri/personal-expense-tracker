@@ -3,8 +3,10 @@ import {
   normalizeCategory,
   normalizeExpenseTitle,
 } from "../utils/expenseUtils";
+import Input from "./ui/Input";
+import Button from "./ui/Button";
 
-function ExpenseForm({ editingExpense, handleSubmit }) {
+function ExpenseForm({ editingExpense, handleSubmit, onCancel }) {
   const [title, setTitle] = useState(editingExpense?.title ?? "");
   const [amount, setAmount] = useState(editingExpense?.amount ?? "");
   const [category, setCategory] = useState(editingExpense?.category ?? "");
@@ -40,38 +42,66 @@ function ExpenseForm({ editingExpense, handleSubmit }) {
   };
 
   return (
-    <form onSubmit={onSubmit}>
-      {validationError && <p className="error-message">{validationError}</p>}
-      <input
-        id="title"
+    <form onSubmit={onSubmit} className="space-y-5">
+      {validationError && (
+        <p className="error-message text-sm" role="alert">
+          {validationError}
+        </p>
+      )}
+
+      <Input
+        id="expense-title"
         name="title"
+        label="Expense title"
         type="text"
-        placeholder="Expense title"
+        placeholder="e.g. Groceries"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        required
       />
 
-      <input
-        id="amount"
-        name="amount"
-        type="number"
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input
+          id="expense-amount"
+          name="amount"
+          label="Amount (₪)"
+          type="number"
+          placeholder="0.00"
+          min="0.01"
+          step="0.01"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          required
+        />
 
-      <input
-        id="category"
-        name="category"
-        type="text"
-        placeholder="Category"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-      />
+        <Input
+          id="expense-category"
+          name="category"
+          label="Category"
+          type="text"
+          placeholder="e.g. Food"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          required
+        />
+      </div>
 
-      <button type="submit">
-        {editingExpense ? "Update Expense" : "Add Expense"}
-      </button>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Button type="submit" className="w-full sm:w-auto">
+          {editingExpense ? "Save changes" : "Add expense"}
+        </Button>
+
+        {editingExpense && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   );
 }

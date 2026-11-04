@@ -1,6 +1,9 @@
 import { useContext, useState } from "react";
 import AuthContext from "../context/AuthContext";
 import { useNavigate, Link } from "react-router";
+import AuthLayout from "./ui/AuthLayout";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 
 function LoginForm() {
   const { login } = useContext(AuthContext);
@@ -23,32 +26,54 @@ function LoginForm() {
       setErrorMessage(error.response?.data?.message || "Login failed");
     }
   };
-
   return (
-    <>
-      <form onSubmit={handleSubmit}>
-        <input
+    <AuthLayout title="Welcome back" subtitle="Sign in to your Expense Tracker">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Input
+          label="Email address"
+          id="login-email"
+          name="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
+          placeholder="you@example.com"
+          autoComplete="email"
           required
         />
 
-        <input
+        <Input
+          label="Password"
+          id="login-password"
+          name="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
+          placeholder="Enter your password"
+          autoComplete="current-password"
           required
         />
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
-        <button type="submit">Login</button>
+
+        {errorMessage && (
+          <p className="error-message text-sm" role="alert">
+            {errorMessage}
+          </p>
+        )}
+
+        <Button type="submit" className="w-full">
+          Sign in
+        </Button>
       </form>
-      <p>
-        Don't have an account? <Link to="/register">Create an Account</Link>
+
+      <p className="mt-6 text-center text-sm text-slate-500">
+        Don't have an account?{" "}
+        <Link
+          to="/register"
+          className="font-medium text-primary hover:text-primary-hover hover:underline"
+        >
+          Create an account
+        </Link>
       </p>
-    </>
+    </AuthLayout>
   );
 }
 
