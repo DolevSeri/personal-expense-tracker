@@ -108,6 +108,7 @@ function useExpenses() {
       return false;
     }
   };
+
   const removeExpense = async (id) => {
     setErrorMessage("");
     setSuccessMessage("");
@@ -120,9 +121,11 @@ function useExpenses() {
       );
 
       setSuccessMessage("Expense deleted successfully");
+      return true;
     } catch (error) {
       console.error(error);
       setErrorMessage("Failed to delete expense");
+      return false;
     }
   };
 

@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import ExpenseForm from "./ExpenseForm";
 import AuthContext from "../context/AuthContext";
 import CategorySection from "./CategorySection";
@@ -9,6 +9,7 @@ import {
 } from "../utils/expenseUtils";
 import useExpenses from "../hooks/useExpenses";
 import Button from "./ui/Button";
+import ConfirmDialog from "./ui/ConfirmDialog";
 
 function ExpenseTracker() {
   const {
@@ -25,39 +26,89 @@ function ExpenseTracker() {
   const { logout } = useContext(AuthContext);
   const [editingExpense, setEditingExpense] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deletingRef = useRef(false);
 
   const handleSubmit = async (expenseData) => {
-    let success;
+    if (submittingRef.current) return false;
 
-    if (editingExpense) {
-      success = await editExpense(editingExpense._id, expenseData);
-    } else {
-      success = await addExpense(expenseData);
+    submittingRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      let success;
+
+      if (editingExpense) {
+        success = await editExpense(editingExpense._id, expenseData);
+      } else {
+        success = await addExpense(expenseData);
+      }
+
+      if (success) {
+        setEditingExpense(null);
+        setIsFormOpen(false);
+      }
+
+      return success;
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
-
-    if (success) {
-      setEditingExpense(null);
-      setIsFormOpen(false);
-    }
-
-    return success;
   };
 
   const currentMonthExpenses = getCurrentMonthExpenses(expenses);
 
   const handleEdit = (expense) => {
+    if (submittingRef.current) return;
+
     setEditingExpense(expense);
     setIsFormOpen(true);
   };
 
   const handleOpenForm = () => {
+    if (submittingRef.current) return;
+
     setEditingExpense(null);
     setIsFormOpen(true);
   };
 
   const handleCancel = () => {
+    if (submittingRef.current) return;
+
     setEditingExpense(null);
     setIsFormOpen(false);
+  };
+  const handleDeleteClick = (expense) => {
+    if (submittingRef.current || deletingRef.current) return;
+
+    setExpenseToDelete(expense);
+  };
+
+  const handleDeleteCancel = () => {
+    if (deletingRef.current) return;
+
+    setExpenseToDelete(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!expenseToDelete || deletingRef.current) return;
+
+    deletingRef.current = true;
+    setIsDeleting(true);
+
+    try {
+      const success = await removeExpense(expenseToDelete._id);
+
+      if (success) {
+        setExpenseToDelete(null);
+      }
+    } finally {
+      deletingRef.current = false;
+      setIsDeleting(false);
+    }
   };
 
   const totalAmount = getTotalAmount(currentMonthExpenses);
@@ -94,13 +145,23 @@ function ExpenseTracker() {
               Total spent this month
             </h2>
 
-            <p className="mt-3 text-3xl font-bold text-slate-900">
-              ₪{totalAmount}
-            </p>
+            {isLoading ? (
+              <p className="mt-3 text-sm text-slate-500" role="status">
+                Loading summary...
+              </p>
+            ) : loadError ? (
+              <p className="mt-3 text-sm text-red-600">Summary unavailable</p>
+            ) : (
+              <>
+                <p className="mt-3 text-3xl font-bold text-slate-900">
+                  ₪{totalAmount}
+                </p>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Across {currentMonthExpenses.length} expenses
-            </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Across {currentMonthExpenses.length} expenses
+                </p>
+              </>
+            )}
           </section>
 
           <div className="lg:col-span-3">
@@ -110,6 +171,7 @@ function ExpenseTracker() {
                 className="w-full"
                 aria-expanded={isFormOpen}
                 aria-controls="expense-form-panel"
+                disabled={isSubmitting}
               >
                 {isFormOpen ? "Close form" : "+ Add expense"}
               </Button>
@@ -130,6 +192,7 @@ function ExpenseTracker() {
                 editingExpense={editingExpense}
                 handleSubmit={handleSubmit}
                 onCancel={handleCancel}
+                isSubmitting={isSubmitting}
               />
             </section>
           </div>
@@ -184,12 +247,21 @@ function ExpenseTracker() {
                     category={category}
                     expenses={groupedExpenses[category]}
                     handleEdit={handleEdit}
-                    handleDelete={removeExpense}
+                    handleDelete={handleDeleteClick}
                   />
                 ))}
             </div>
           )}
         </section>
+        {expenseToDelete && (
+          <ConfirmDialog
+            title="Delete expense?"
+            message={`Are you sure you want to delete "${expenseToDelete.title}"? This action cannot be undone.`}
+            onConfirm={handleDeleteConfirm}
+            onCancel={handleDeleteCancel}
+            isPending={isDeleting}
+          />
+        )}
       </main>
     </div>
   );

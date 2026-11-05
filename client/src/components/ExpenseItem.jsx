@@ -21,7 +21,7 @@ function ExpenseItem({ expense, handleEdit, handleDelete }) {
 
         <Button
           variant="danger"
-          onClick={() => handleDelete(expense._id)}
+          onClick={() => handleDelete(expense)}
           size="sm"
         >
           Delete

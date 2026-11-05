@@ -6,11 +6,12 @@ import {
 import Input from "./ui/Input";
 import Button from "./ui/Button";
 
-function ExpenseForm({ editingExpense, handleSubmit, onCancel }) {
+function ExpenseForm({ editingExpense, handleSubmit, onCancel, isSubmitting }) {
   const [title, setTitle] = useState(editingExpense?.title ?? "");
   const [amount, setAmount] = useState(editingExpense?.amount ?? "");
   const [category, setCategory] = useState(editingExpense?.category ?? "");
   const [validationError, setValidationError] = useState("");
+
   const onSubmit = async (e) => {
     e.preventDefault();
 
@@ -57,6 +58,7 @@ function ExpenseForm({ editingExpense, handleSubmit, onCancel }) {
         placeholder="e.g. Groceries"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        disabled={isSubmitting}
         required
       />
 
@@ -71,6 +73,7 @@ function ExpenseForm({ editingExpense, handleSubmit, onCancel }) {
           step="0.01"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
+          disabled={isSubmitting}
           required
         />
 
@@ -82,13 +85,22 @@ function ExpenseForm({ editingExpense, handleSubmit, onCancel }) {
           placeholder="e.g. Food"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
+          disabled={isSubmitting}
           required
         />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button type="submit" className="w-full sm:w-auto">
-          {editingExpense ? "Save changes" : "Add expense"}
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full sm:w-auto"
+        >
+          {isSubmitting
+            ? "Saving..."
+            : editingExpense
+              ? "Save changes"
+              : "Add expense"}
         </Button>
 
         {editingExpense && (
@@ -96,6 +108,7 @@ function ExpenseForm({ editingExpense, handleSubmit, onCancel }) {
             type="button"
             variant="secondary"
             onClick={onCancel}
+            disabled={isSubmitting}
             className="w-full sm:w-auto"
           >
             Cancel
