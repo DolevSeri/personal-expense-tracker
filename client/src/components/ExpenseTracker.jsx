@@ -33,7 +33,7 @@ function ExpenseTracker() {
   const deletingRef = useRef(false);
 
   const handleSubmit = async (expenseData) => {
-    if (submittingRef.current) return false;
+    if (submittingRef.current || isLoading || loadError) return false;
 
     submittingRef.current = true;
     setIsSubmitting(true);
@@ -193,6 +193,7 @@ function ExpenseTracker() {
                 handleSubmit={handleSubmit}
                 onCancel={handleCancel}
                 isSubmitting={isSubmitting}
+                isLoadBlocked={isLoading || Boolean(loadError)}
               />
             </section>
           </div>

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getExpenses,
   createExpense,
@@ -12,52 +13,57 @@ function useExpenses() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
+  const loadControllerRef = useRef(null);
+
+  const loadExpenses = useCallback(async () => {
+    loadControllerRef.current?.abort();
+
     const controller = new AbortController();
-
-    const loadExpenses = async () => {
-      try {
-        const response = await getExpenses({
-          signal: controller.signal,
-        });
-
-        if (controller.signal.aborted) return;
-
-        setExpenses(response.data);
-        setLoadError("");
-      } catch (error) {
-        if (controller.signal.aborted) return;
-
-        console.error(error);
-        setLoadError("Failed to load expenses");
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadExpenses();
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
-  const retryExpenses = async () => {
-    setIsLoading(true);
-    setLoadError("");
+    loadControllerRef.current = controller;
 
     try {
-      const response = await getExpenses();
+      const response = await getExpenses({
+        signal: controller.signal,
+      });
+
+      if (controller.signal.aborted) return;
 
       setExpenses(response.data);
+      setLoadError("");
     } catch (error) {
+      if (controller.signal.aborted) return;
+
       console.error(error);
       setLoadError("Failed to load expenses");
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
+
+      if (loadControllerRef.current === controller) {
+        loadControllerRef.current = null;
+      }
     }
+  }, []);
+
+  useEffect(() => {
+    // False positive in eslint-plugin-react-hooks@7.1.1:
+    // State updates in loadExpenses happen after await, not synchronously.
+    // Using .then() avoids the warning, but we keep async/await for consistency.
+    // React issue #34905, fixed in source by PR #36734.
+    // Remove this suppression when upgrading to a version containing the fix.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadExpenses();
+
+    return () => {
+      loadControllerRef.current?.abort();
+    };
+  }, [loadExpenses]);
+
+  const retryExpenses = () => {
+    setIsLoading(true);
+    setLoadError("");
+    return loadExpenses();
   };
 
   useEffect(() => {

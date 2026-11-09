@@ -6,11 +6,18 @@ import {
 import Input from "./ui/Input";
 import Button from "./ui/Button";
 
-function ExpenseForm({ editingExpense, handleSubmit, onCancel, isSubmitting }) {
+function ExpenseForm({
+  editingExpense,
+  handleSubmit,
+  onCancel,
+  isSubmitting,
+  isLoadBlocked,
+}) {
   const [title, setTitle] = useState(editingExpense?.title ?? "");
   const [amount, setAmount] = useState(editingExpense?.amount ?? "");
   const [category, setCategory] = useState(editingExpense?.category ?? "");
   const [validationError, setValidationError] = useState("");
+  const isFormDisabled = isSubmitting || isLoadBlocked;
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -58,7 +65,7 @@ function ExpenseForm({ editingExpense, handleSubmit, onCancel, isSubmitting }) {
         placeholder="e.g. Groceries"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        disabled={isSubmitting}
+        disabled={isFormDisabled}
         required
       />
 
@@ -73,7 +80,7 @@ function ExpenseForm({ editingExpense, handleSubmit, onCancel, isSubmitting }) {
           step="0.01"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          disabled={isSubmitting}
+          disabled={isFormDisabled}
           required
         />
 
@@ -85,7 +92,7 @@ function ExpenseForm({ editingExpense, handleSubmit, onCancel, isSubmitting }) {
           placeholder="e.g. Food"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          disabled={isSubmitting}
+          disabled={isFormDisabled}
           required
         />
       </div>
@@ -93,7 +100,7 @@ function ExpenseForm({ editingExpense, handleSubmit, onCancel, isSubmitting }) {
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isFormDisabled}
           className="w-full sm:w-auto"
         >
           {isSubmitting
