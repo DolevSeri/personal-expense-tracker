@@ -1,4 +1,10 @@
-import { useContext, useRef, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import ExpenseForm from "./ExpenseForm";
 import AuthContext from "../context/AuthContext";
 import CategorySection from "./CategorySection";
@@ -23,7 +29,7 @@ function ExpenseTracker() {
     editExpense,
     removeExpense,
   } = useExpenses();
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [editingExpense, setEditingExpense] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +37,50 @@ function ExpenseTracker() {
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const deletingRef = useRef(false);
+  const formDialogRef = useRef(null);
+
+  useEffect(() => {
+    const dialog = formDialogRef.current;
+    if (!dialog) return;
+
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    const updateDialog = () => {
+      if (mediaQuery.matches) {
+        if (dialog.open) {
+          dialog.close();
+        }
+      } else if (isFormOpen && !dialog.open) {
+        dialog.showModal();
+        dialog.querySelector("#expense-title")?.focus({ preventScroll: true });
+      } else if (!isFormOpen && dialog.open) {
+        dialog.close();
+      }
+    };
+
+    updateDialog();
+
+    mediaQuery.addEventListener("change", updateDialog);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateDialog);
+    };
+  }, [isFormOpen]);
+
+  useLayoutEffect(() => {
+    if (!isFormOpen) return;
+
+    const dialog = formDialogRef.current;
+    const titleInput = dialog?.querySelector("#expense-title");
+
+    if (!titleInput || titleInput.disabled) return;
+
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+
+    if (isDesktop || dialog.open) {
+      titleInput.focus({ preventScroll: true });
+    }
+  }, [isFormOpen, editingExpense]);
 
   const handleSubmit = async (expenseData) => {
     if (submittingRef.current || isLoading || loadError) return false;
@@ -131,129 +181,169 @@ function ExpenseTracker() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 pb-24 sm:px-6 lg:pb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">
-            Monthly expenses
+            Welcome back, {user?.name}!
           </h2>
-          <p className="mt-1 text-sm text-slate-500">{monthLabel}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Your expenses for {monthLabel}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
-            <h2 className="text-sm font-medium text-slate-500">
-              Total spent this month
-            </h2>
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-5">
+          {/* Monthly summary and expenses */}
+          <div className="space-y-6 lg:col-span-3">
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-sm font-medium text-slate-500">
+                Total spent this month
+              </h2>
 
-            {isLoading ? (
-              <p className="mt-3 text-sm text-slate-500" role="status">
-                Loading summary...
+              {isLoading ? (
+                <p className="mt-3 text-sm text-slate-500" role="status">
+                  Loading summary...
+                </p>
+              ) : loadError ? (
+                <p className="mt-3 text-sm text-red-600">Summary unavailable</p>
+              ) : (
+                <>
+                  <p className="mt-3 text-3xl font-bold text-slate-900">
+                    ₪{totalAmount}
+                  </p>
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    Across {currentMonthExpenses.length} expenses
+                  </p>
+                </>
+              )}
+            </section>
+
+            {apiErrorMessage && (
+              <p className="error-message text-sm" role="alert">
+                {apiErrorMessage}
               </p>
-            ) : loadError ? (
-              <p className="mt-3 text-sm text-red-600">Summary unavailable</p>
-            ) : (
-              <>
-                <p className="mt-3 text-3xl font-bold text-slate-900">
-                  ₪{totalAmount}
-                </p>
-
-                <p className="mt-2 text-sm text-slate-500">
-                  Across {currentMonthExpenses.length} expenses
-                </p>
-              </>
             )}
-          </section>
 
-          <div className="lg:col-span-3">
-            <div className="lg:hidden">
-              <Button
-                onClick={isFormOpen ? handleCancel : handleOpenForm}
-                className="w-full"
-                aria-expanded={isFormOpen}
-                aria-controls="expense-form-panel"
-                disabled={isSubmitting}
+            {successMessage && (
+              <p className="success-message text-sm" role="status">
+                {successMessage}
+              </p>
+            )}
+
+            <section>
+              <h2 className="mb-5 text-xl font-semibold text-slate-900">
+                Expenses by category
+              </h2>
+
+              {isLoading ? (
+                <div
+                  className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500"
+                  role="status"
+                >
+                  Loading expenses...
+                </div>
+              ) : loadError ? (
+                <div
+                  className="rounded-2xl border border-red-200 bg-red-50 p-6"
+                  role="alert"
+                >
+                  <p className="mb-4 text-sm text-red-700">{loadError}</p>
+
+                  <Button variant="secondary" onClick={retryExpenses}>
+                    Try again
+                  </Button>
+                </div>
+              ) : currentMonthExpenses.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
+                  No expenses recorded this month. Add your first expense above.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {Object.keys(groupedExpenses)
+                    .sort()
+                    .map((category) => (
+                      <CategorySection
+                        key={category}
+                        category={category}
+                        expenses={groupedExpenses[category]}
+                        handleEdit={handleEdit}
+                        handleDelete={handleDeleteClick}
+                      />
+                    ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Shared Add/Edit form */}
+          <dialog
+            ref={formDialogRef}
+            onCancel={(e) => {
+              if (isSubmitting) {
+                e.preventDefault();
+              } else {
+                handleCancel();
+              }
+            }}
+            className="
+    m-auto w-[calc(100%-2rem)] max-w-lg
+    rounded-2xl border border-slate-200
+    bg-white p-6 text-slate-900 shadow-xl
+    backdrop:bg-slate-900/50
+    max-h-[90dvh] overflow-y-auto
+
+    lg:sticky lg:top-6 lg:col-span-2
+    lg:m-0 lg:block lg:w-full lg:max-w-none
+    lg:max-h-none lg:overflow-visible
+    lg:shadow-sm
+  "
+            aria-labelledby="expense-form-heading"
+          >
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <h2
+                id="expense-form-heading"
+                className="text-lg font-semibold text-slate-900"
               >
-                {isFormOpen ? "Close form" : "+ Add expense"}
-              </Button>
-            </div>
-
-            <section
-              id="expense-form-panel"
-              className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${
-                isFormOpen ? "mt-4 lg:mt-0" : "hidden lg:block"
-              }`}
-            >
-              <h2 className="mb-5 text-lg font-semibold text-slate-900">
                 {editingExpense ? "Edit expense" : "Add an expense"}
               </h2>
 
-              <ExpenseForm
-                key={editingExpense?._id ?? "new"}
-                editingExpense={editingExpense}
-                handleSubmit={handleSubmit}
-                onCancel={handleCancel}
-                isSubmitting={isSubmitting}
-                isLoadBlocked={isLoading || Boolean(loadError)}
-              />
-            </section>
-          </div>
+              {isFormOpen && (
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                  className="text-sm text-slate-500 hover:text-slate-900 lg:hidden"
+                  aria-label="Close expense form"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <ExpenseForm
+              key={editingExpense?._id ?? "new"}
+              editingExpense={editingExpense}
+              handleSubmit={handleSubmit}
+              onCancel={handleCancel}
+              isSubmitting={isSubmitting}
+              isLoadBlocked={isLoading || Boolean(loadError)}
+            />
+          </dialog>
         </div>
 
-        {apiErrorMessage && (
-          <p className="error-message text-sm" role="alert">
-            {apiErrorMessage}
-          </p>
-        )}
-
-        {successMessage && (
-          <p className="success-message text-sm" role="status">
-            {successMessage}
-          </p>
-        )}
-
-        <section>
-          <h2 className="mb-5 text-xl font-semibold text-slate-900">
-            Expenses by category
-          </h2>
-
-          {isLoading ? (
-            <div
-              className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500"
-              role="status"
+        {/* Persistent mobile Add button */}
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white p-4 lg:hidden">
+          <div className="mx-auto max-w-6xl">
+            <Button
+              onClick={handleOpenForm}
+              className="w-full"
+              disabled={isSubmitting}
+              aria-haspopup="dialog"
             >
-              Loading expenses...
-            </div>
-          ) : loadError ? (
-            <div
-              className="rounded-2xl border border-red-200 bg-red-50 p-6"
-              role="alert"
-            >
-              <p className="mb-4 text-sm text-red-700">{loadError}</p>
-
-              <Button variant="secondary" onClick={retryExpenses}>
-                Try again
-              </Button>
-            </div>
-          ) : currentMonthExpenses.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-              No expenses recorded this month. Add your first expense above.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {Object.keys(groupedExpenses)
-                .sort()
-                .map((category) => (
-                  <CategorySection
-                    key={category}
-                    category={category}
-                    expenses={groupedExpenses[category]}
-                    handleEdit={handleEdit}
-                    handleDelete={handleDeleteClick}
-                  />
-                ))}
-            </div>
-          )}
-        </section>
+              + Add expense
+            </Button>
+          </div>
+        </div>
         {expenseToDelete && (
           <ConfirmDialog
             title="Delete expense?"

@@ -43,7 +43,12 @@ function ConfirmDialog({
       </p>
 
       <div className="mt-6 flex justify-end gap-3">
-        <Button variant="secondary" onClick={onCancel} disabled={isPending}>
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+          disabled={isPending}
+          autoFocus
+        >
           Cancel
         </Button>
 
